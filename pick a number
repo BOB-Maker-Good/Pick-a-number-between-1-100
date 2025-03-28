@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing Game with Customization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e0f7fa;
+            transition: background-color 0.5s;
+        }
+        #game, #account, #login {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            display: none;
+        }
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .lives {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="account">
+    <h1>Create Account</h1>
+    <input type="text" id="username" placeholder="Your Name (Username)">
+    <input type="text" id="displayName" placeholder="What should I call you?">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="createAccount()">Create Account</button>
+    <button onclick="showLogin()">Login</button>
+    <p id="accountMessage"></p>
+</div>
+
+<div id="login" style="display:none;">
+    <h1>Login</h1>
+    <input type="text" id="loginUsername" placeholder="Your Name">
+    <input type="text" id="threeDigitCode" placeholder="3-Digit Code (optional)">
+    <input type="password" id="loginPassword" placeholder="Password (optional)">
+    <input type="text" id="loginDisplayName" placeholder="What should I call you?">
+    <button onclick="login()">Login</button>
+    <button onclick="showSignup()">Sign Up</button>
+    <p id="loginMessage"></p>
+</div>
+
+<div id="game">
+    <h1>Guess the Number!</h1>
+    <p id="welcomeMessage"></p>
+    <p>I'm thinking of a number between 1 and 100.</p>
+    <div class="lives" id="livesDisplay">Lives: ❌❌❌</div>
+    <input type="number" id="guess" min="1" max="100" placeholder="Your guess">
+    <button onclick="checkGuess()">Guess</button>
+    <p id="result"></p>
+    <div id="cheatCodeContainer">
+        <input type="text" id="cheatCode" placeholder="Enter cheat code">
+        <button onclick="activateCheat()">Activate Cheat</button>
+    </div>
+    <p id="userCode"></p>
+    <button onclick="logOut()">Log Out</button>
+    <div>
+        <label for="crossColor">Cross Color:</label>
+        <input type="color" id="crossColor" onchange="updateCrosses()">
+        <label for="backgroundColor">Background Color:</label>
+        <input type="color" id="backgroundColor" onchange="updateBackground()">
+        <label for="textColor">Text Color:</label>
+        <input type="color" id="textColor" onchange="updateTextColor()">
+    </div>
+</div>
+
+<script>
+    let randomNumber;
+    let cheatMode = false;
+    let lives = 3;
+    const accounts = {};
+    let currentUser = null;
+    let userCode = null;
+    let displayName = '';
+
+    // Show the account creation interface
+    document.getElementById('account').style.display = 'block';
+
+    function createAccount() {
+        const username = document.getElementById('username').value;
+        const displayNameInput = document.getElementById('displayName').value;
+        const password = document.getElementById('password').value;
+        const message = document.getElementById('accountMessage');
+
+        if (username && displayNameInput && password) {
+            accounts[username] = { password, code: generateRandomCode(), displayName: displayNameInput };
+            message.textContent = 'Account created! You can now log in.';
+            document.getElementById('username').value = '';
+            document.getElementById('displayName').value = '';
+            document.getElementById('password').value = '';
+        } else {
+            message.textContent = 'Please enter a username, display name, and password.';
+        }
+    }
+
+    function showLogin() {
+        document.getElementById('account').style.display = 'none';
+        document.getElementById('login').style.display = 'block';
+    }
+
+    function showSignup() {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('account').style.display = 'block';
+    }
+
+    function login() {
+        const username = document.getElementById('loginUsername').value;
+        const codeInput = document.getElementById('threeDigitCode').value;
+        const passwordInput = document.getElementById('loginPassword').value;
+        const loginDisplayName = document.getElementById('loginDisplayName').value;
+        const message = document.getElementById('loginMessage');
+
+        // Check if username exists
+        if (accounts[username]) {
+            // Check if the entered code matches the stored code or if the password is correct
+            if (accounts[username].code === codeInput || passwordInput === accounts[username].password) {
+                currentUser = username;
+                userCode = accounts[username].code;
+                displayName = accounts[username].displayName;
+                message.textContent = 'Login successful!';
+                document.getElementById('login').style.display = 'none';
+                startGame();
+            } else {
+                message.textContent = 'Invalid code or password.';
+            }
+        } else {
+            message.textContent = 'Invalid username.';
+        }
+    }
+
+    function startGame() {
+        randomNumber = Math.floor(Math.random() * 100) + 1;
+        lives = 3;
+        cheatMode = false;
+        document.getElementById('livesDisplay').textContent = 'Lives: ❌❌❌';
+        document.getElementById('game').style.display = 'block';
+        document.getElementById('result').textContent = '';
+        document.getElementById('cheatCodeContainer').style.display = 'none';
+        document.getElementById('userCode').textContent = `Your Code: ${userCode}`;
+        document.getElementById('welcomeMessage').textContent = `Welcome, ${displayName}!`;
+    }
+
+    function checkGuess() {
+        const userGuess = parseInt(document.getElementById('guess').value);
+        const result = document.getElementById('result');
+
+        if (userGuess === 102) {
+            document.getElementById('cheatCodeContainer').style.display = 'block';
+            result.textContent = '';
+            return;
+        }
+
+        if (cheatMode) {
+            result.textContent = `Cheat Mode: The number is ${randomNumber}.`;
+            return;
+        }
+
+        if (userGuess < 1 || userGuess > 100 || isNaN(userGuess)) {
+            result.textContent = 'Please enter a valid number between 1 and 100.';
+            return;
+        }
+
+        if (userGuess < randomNumber) {
+            result.textContent = 'Too low! Try again.';
+        } else if (userGuess > randomNumber) {
+            result.textContent = 'Too high! Try again.';
+        } else {
+            result.textContent = 'Congratulations! You guessed the number!';
+            return;
+        }
+
+        lives--;
+        updateLives();
+        if (lives === 0) {
+            result.textContent = 'Game Over! You have no lives left.';
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('account').style.display = 'block';
+        }
+    }
+
+    function updateLives() {
+        const livesDisplay = document.getElementById('livesDisplay');
+        livesDisplay.textContent = 'Lives: ' + '❌'.repeat(lives);
+    }
+
+    function isPrime(num) {
+        if (num <= 1) return false;
+        for (let i = 2; i <= Math.sqrt(num); i++) {
+            if (num % i === 0) return false;
+        }
+        return true;
+    }
+
+    function activateCheat() {
+        const code = document.getElementById('cheatCode').value;
+        const result = document.getElementById('result');
+
+        if (code === "SHOWNUMBER") {
+            cheatMode = true;
+            result.textContent = `Cheat Mode Activated: The number is ${randomNumber}.`;
+        } else if (code === "HINT1") {
+            result.textContent = randomNumber > 50 ? 'The number is greater than 50.' : 'The number is less than 50.';
+        } else if (code === "HINT2") {
+            const hints = [];
+            if (randomNumber % 2 !== 0) hints.push('odd number');
+            if (isPrime(randomNumber)) hints.push('prime number');
+            if (randomNumber > 50) hints.push('greater than 50');
+            if (randomNumber < 50) hints.push('less than 50');
+            result.textContent = `Hint: The number is ${hints.join(', ')}.`;
+        } else {
+            result.textContent = 'Invalid cheat code. Try "SHOWNUMBER", "HINT1", or "HINT2".';
+        }
+    }
+
+    function logOut() {
+        currentUser = null;
+        userCode = null;
+        displayName = '';
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('account').style.display = 'block';
+    }
+
+    function updateCrosses() {
+        const crossColor = document.getElementById('crossColor').value;
+        document.getElementById('livesDisplay').style.color = crossColor;
+    }
+
+    function updateBackground() {
+        const backgroundColor = document.getElementById('backgroundColor').value;
+        document.body.style.backgroundColor = backgroundColor;
+    }
+
+    function updateTextColor() {
+        const textColor = document.getElementById('textColor').value;
+        document.querySelectorAll('#game, #account, #login').forEach(div => {
+            div.style.color = textColor;
+        });
+    }
+
+    function generateRandomCode() {
+        return Math.floor(100 + Math.random() * 900); // Generates a 3-digit code
+    }
+</script>
+
+</body>
+</html>
